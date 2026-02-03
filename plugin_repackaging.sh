@@ -110,12 +110,7 @@ repackage(){
 	echo "Unzip success."
 	echo "Repackaging ..."
 	cd ${CURR_DIR}/${PACKAGE_NAME}
-	# 确保 PIP_PLATFORM 不为空且格式正确
-    if [ -n "${PIP_PLATFORM}" ]; then
-        pip download ${PIP_PLATFORM} -r requirements.txt -d ./wheels --index-url ${PIP_MIRROR_URL} --trusted-host mirrors.aliyun.com
-    else
-        pip download -r requirements.txt -d ./wheels --index-url ${PIP_MIRROR_URL} --trusted-host mirrors.aliyun.com
-    fi
+    pip download -r requirements.txt -d ./wheels --no-binary pandas --index-url https://pypi.org/simple
 	if [[ $? -ne 0 ]]; then
 		echo "Pip download failed."
 		exit 1
