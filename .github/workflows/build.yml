@@ -48,34 +48,65 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          
+
       - name: Make plugin_repackaging.sh executable
         run: chmod +x ./plugin_repackaging.sh
 
-      - name: Debug plugin directory
-        run: find market -maxdepth 5 -type f -print
+      # -------------------------------
+      # ① 下载插件源码（不 pip）
+      # -------------------------------
+      - name: Download plugin source only
+        run: |
+          ./plugin_repackaging.sh \
+            -p ${{ env.PIP_PLATFORM }} \
+            -s ${{ env.PACKAGE_SUFFIX }} \
+            download \
+            "${{ inputs.plugin_author }}" \
+            "${{ inputs.plugin_name }}" \
+            "${{ inputs.plugin_version }}"
 
-      - name: Search for pypandoc-binary
-        run: grep -R "pypandoc-binary" -n market || echo "Not found"
-          
+      # -------------------------------
+      # ② Debug：确认 market 目录存在
+      # -------------------------------
+      - name: Debug market directory
+        run: |
+          echo "Listing market directory..."
+          find market -maxdepth 5 -type f -print
+
+      # -------------------------------
+      # ③ Patch 插件依赖
+      # -------------------------------
       - name: Patch plugin dependencies
         run: |
           PLUGIN_DIR=$(find market -type d -name "${{ inputs.plugin_name }}")
           echo "Plugin directory: $PLUGIN_DIR"
-          # 替换 pypandoc-binary 为 pypandoc
-          sed -i 's/pypandoc-binary/pypandoc/g' $PLUGIN_DIR/manifest.json
 
-      - name: Run plugin repackaging script
+          # 替换 pypandoc-binary → pypandoc
+          sed -i 's/pypandoc-binary/pypandoc/g' "$PLUGIN_DIR/manifest.json"
+
+          echo "Patched manifest.json:"
+          cat "$PLUGIN_DIR/manifest.json"
+
+      # -------------------------------
+      # ④ 安装 pandoc（供 pypandoc 使用）
+      # -------------------------------
+      - name: Install pandoc
+        run: sudo apt-get update && sudo apt-get install -y pandoc
+
+      # -------------------------------
+      # ⑤ pip 下载依赖 + 打包
+      # -------------------------------
+      - name: Repackage plugin
         run: |
           PIP_MIRROR_URL=https://pypi.org/simple \
           ./plugin_repackaging.sh \
-          -p ${{ env.PIP_PLATFORM }} \
-          -s ${{ env.PACKAGE_SUFFIX }} \
-          market \
-          "${{ github.event.inputs.plugin_author }}" \
-          "${{ github.event.inputs.plugin_name }}" \
-          "${{ github.event.inputs.plugin_version }}"
-          
+            -p ${{ env.PIP_PLATFORM }} \
+            -s ${{ env.PACKAGE_SUFFIX }} \
+            build \
+            "${{ inputs.plugin_author }}" \
+            "${{ inputs.plugin_name }}" \
+            "${{ inputs.plugin_version }}"
+
       - name: Find repackaged artifact
         run: |
           ARTIFACT_PATH=$(find . -type f -name "*-${PACKAGE_SUFFIX}.difypkg" | head -n 1)
