@@ -110,7 +110,7 @@ repackage(){
 	echo "Unzip success."
 	echo "Repackaging ..."
 	cd ${CURR_DIR}/${PACKAGE_NAME}
-	pip download -r requirements.txt -d ./wheels --index-url https://pypi.org/simple
+	pip download -r requirements.txt -d ./wheels --index-url ${PIP_MIRROR_URL} --trusted-host mirrors.aliyun.com
 	if [[ $? -ne 0 ]]; then
 		echo "Pip download failed."
 		exit 1
