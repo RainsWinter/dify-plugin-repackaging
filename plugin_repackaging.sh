@@ -110,7 +110,18 @@ repackage(){
 	echo "Unzip success."
 	echo "Repackaging ..."
 	cd ${CURR_DIR}/${PACKAGE_NAME}
-    pip download --platform manylinux_2_17_x86_64 --only-binary=:all: -r requirements.txt -d ./wheels --index-url https://pypi.org/simple --no-binary :none:
+    # 版本3：分段处理，先尝试二进制，失败后允许源码
+    echo "尝试下载二进制包..."
+    if ! pip download --platform manylinux_2_17_x86_64 --only-binary=:all: -r requirements.txt -d ./wheels --index-url https://pypi.org/simple --no-binary :none: 2>/dev/null; then
+        echo "二进制包下载失败，尝试允许源码编译..."
+        # 备份原文件
+        cp requirements.txt requirements.txt.backup
+        # 临时修改 pandas 要求
+        sed -i 's/pandas~=2.3.3/pandas>=2.3.0,<=2.3.3/g' requirements.txt
+        pip download -r requirements.txt -d ./wheels --no-binary pandas --index-url https://pypi.org/simple
+        # 恢复原文件
+        mv requirements.txt.backup requirements.txt
+    fi
 	if [[ $? -ne 0 ]]; then
 		echo "Pip download failed."
 		exit 1
