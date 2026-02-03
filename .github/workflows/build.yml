@@ -63,6 +63,12 @@ jobs:
           "${{ github.event.inputs.plugin_name }}" \
           "${{ github.event.inputs.plugin_version }}"
           
+      - name: Debug plugin directory
+        run: find market -maxdepth 5 -type f -print
+
+      - name: Search for pypandoc-binary
+        run: grep -R "pypandoc-binary" -n market || echo "Not found"
+          
       - name: Patch plugin dependencies
         run: |
           PLUGIN_DIR=$(find market -type d -name "${{ inputs.plugin_name }}")
