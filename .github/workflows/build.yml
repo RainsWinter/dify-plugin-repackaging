@@ -48,6 +48,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          
+      - name: Patch plugin dependencies
+        run: |
+          PLUGIN_DIR=$(find market -type d -name "${{ inputs.plugin_name }}")
+          echo "Plugin directory: $PLUGIN_DIR"
+          # 替换 pypandoc-binary 为 pypandoc
+          sed -i 's/pypandoc-binary/pypandoc/g' $PLUGIN_DIR/manifest.json
 
       - name: Make plugin_repackaging.sh executable
         run: chmod +x ./plugin_repackaging.sh
